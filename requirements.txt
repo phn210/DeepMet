@@ -1,7 +1,8 @@
-tensorflow
-
-pytorch
-
-transformers
-
+matplotlib
+tensorflow==2.19.0
+tf-keras==2.19.0
+torch
+transformers==4.37.2
+scikit-learn
+scipy 
 spacy

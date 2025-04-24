@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import tensorflow as tf
 import tensorflow.keras.backend as K
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from scipy.stats import spearmanr
 from math import floor, ceil
-from transformers import *
+# from transformers import *
+from transformers import RobertaTokenizer, RobertaConfig, TFRobertaModel
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
@@ -25,6 +26,7 @@ def _convert_to_transformer_inputs(instance, instance2, tokenizer, max_sequence_
         inputs = tokenizer.encode_plus(str1, str2,
                                        add_special_tokens=True,
                                        max_length=length,
+                                       return_token_type_ids=True,
                                        truncation_strategy=truncation_strategy)
         input_ids = inputs["input_ids"]
         input_masks = [1] * len(input_ids)
@@ -74,8 +76,10 @@ def create_model():
     input_id2 = tf.keras.layers.Input((MAX_SEQUENCE_LENGTH,), dtype=tf.int32)
     input_mask2 = tf.keras.layers.Input((MAX_SEQUENCE_LENGTH,), dtype=tf.int32)
     input_atn2 = tf.keras.layers.Input((MAX_SEQUENCE_LENGTH,), dtype=tf.int32)
-    config = RobertaConfig.from_pretrained('roberta-base')
-    config.output_hidden_states = False
+    config = RobertaConfig.from_pretrained('roberta-base', output_hidden_states=False)
+    # config.output_hidden_states = False
+    # config.architectures = ["RobertaModel"]
+    print(config)
     base_model = TFRobertaModel.from_pretrained('roberta-base', config=config)
     TransformerA = base_model(input_id, attention_mask=input_mask, token_type_ids=input_atn)[0]
     TransformerB = base_model(input_id2, attention_mask=input_mask2, token_type_ids=input_atn2)[0]
@@ -147,7 +151,7 @@ def create_model4():
 if __name__ == '__main__':
 
     np.set_printoptions(suppress=True)
-    print(tf.__version__)
+    print(tf.__version__, tf.keras)
     gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -275,7 +279,7 @@ if __name__ == '__main__':
         train_outputs = to_categorical(outputs[train_idx])
         valid_inputs = [inputs[i][valid_idx] for i in range(len(inputs))]
         valid_outputs = to_categorical(outputs[valid_idx])
-        K.clear_session()
+        # K.clear_session()
         model = create_model()
         optimizer = tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE)
         model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['acc', 'mae'])
